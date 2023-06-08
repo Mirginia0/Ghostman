@@ -1,9 +1,15 @@
 #include <iostream>
 #include <vector>
+#include <ctime>
+#include <cstdlib>
 
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 
+using namespace std;
+
+const int CoinDurMax = 5000;  // in miliseconds (5 seconds)
+const int CoinDurationMin = 1000; // in miliseconds (1 second)
 
 class CustomSprite : public sf::Sprite
  {
@@ -117,7 +123,8 @@ class CustomSprite : public sf::Sprite
 
 int main()
 {
-
+    srand(static_cast<unsigned int>(time(0)));
+ 
     sf::RenderWindow window(sf::VideoMode(800, 600), "My window");
     sf::Clock clock;
 
@@ -131,6 +138,9 @@ int main()
     sf::Texture wall_tex;
     if(!wall_tex.loadFromFile("wall.png")) { return 1; }
     wall_tex.setRepeated(true);
+ 
+    sf::Texture coin_tex;
+    if(!coin_tex.loadFromFile("coin_01.png")) { return 1; }
 
     CustomSprite ghost;
     ghost.setTexture(ghost_tex);
@@ -141,13 +151,20 @@ int main()
     background.setScale(1,1);
     background.setTextureRect(sf::IntRect(0,0,800,600));
 
-
+    sf::Sprite coin;
+    coin.setTexture(coin_tex);
+    coin.setOrigin(45/2, 48/2);
+    coin.setScale(0.5, 0.5);
+    coin.setPosition(rand() % 800, rand() % 600);
 
     std::vector<sf::Sprite> walls;
 
     sf::Sprite wall1;
 
     bool isKeyPressed = false;
+ 
+    sf::Clock coinTimer;
+    int score = 0;
 
     while (window.isOpen())
      {
@@ -163,6 +180,10 @@ int main()
          }
        }
 
+      if (coinTimer.getElapsedTime().asMilliseconds() > CoinDurMax){
+          coinTimer.restart();
+          coin.setPosition(rand() % 800, rand() % 600);
+      }
 
       if (event.type == sf::Event::KeyPressed){
           if (event.key.code == sf::Keyboard::Up){
@@ -223,7 +244,11 @@ int main()
           }
       }
         }
-
+      if (ghost.getGlobalBounds().intersects(coin.getGlobalBounds())){
+          score++;
+          coin.setPosition(rand() % 800, rand() % 600);
+          coinTimer.restart();
+      }
 
       ghost.setBounds(0, window.getSize().x, 0, window.getSize().y);
       ghost.moveInDirection(elapsed, walls);
@@ -231,6 +256,7 @@ int main()
       window.clear(sf::Color::Black);
       window.draw(background);
       window.draw(ghost);
+      window.draw(coin);
 
       for (auto &wall : walls){
            window.draw(wall);
@@ -239,5 +265,7 @@ int main()
       window.display();
      }
 
+    std::cout << "TOTAL COINS EATEN: " << score << std::endl;
+ 
     return 0;
 }

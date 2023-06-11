@@ -11,6 +11,8 @@ using namespace std;
 const int CoinDurMax = 5000;  // in miliseconds (5 seconds)
 const int CoinDurationMin = 1000; // in miliseconds (1 second)
 
+const int maxGameDurationInSeconds = 60;
+
 class CustomSprite : public sf::Sprite
  {
   public:
@@ -124,6 +126,11 @@ class CustomSprite : public sf::Sprite
 int main()
 {
     srand(static_cast<unsigned int>(time(0)));
+
+    sf::Font main_font;
+    if (!main_font.loadFromFile("arial.ttf")) {
+        return 1;
+    }
  
     sf::RenderWindow window(sf::VideoMode(800, 600), "My window");
     sf::Clock clock;
@@ -166,19 +173,45 @@ int main()
     sf::Clock coinTimer;
     int score = 0;
 
+    sf::Clock gameTimer;
+
+    bool isGameOver = false;
+
     while (window.isOpen())
-     {
-      sf::Time elapsed = clock.restart();
-
-
+    {
       sf::Event event;
+
       while (window.pollEvent(event))
-       {
+      {
+        if (event.type == sf::Event::MouseButtonPressed
+            && event.mouseButton.button == sf::Mouse::Left
+            && isGameOver) {
+            window.close();
+        }
         if (event.type == sf::Event::Closed)
-         {
+        {
           window.close();
-         }
-       }
+        }
+      }
+      
+      if (isGameOver) {
+          continue;
+      }
+      
+      if (gameTimer.getElapsedTime().asSeconds() > maxGameDurationInSeconds) {
+        isGameOver = true;
+        sf::Text gameOverText("Game Over!", main_font);
+        gameOverText.setPosition(50, 50);
+        std::string scoreString = std::string("Final score: ") + to_string(score);
+        sf::Text scoreText(scoreString, main_font);
+        scoreText.setPosition(100, 100);
+        window.draw(gameOverText);
+        window.draw(scoreText);
+        window.display();
+        continue;
+      }
+
+      sf::Time elapsed = clock.restart();      
 
       if (coinTimer.getElapsedTime().asMilliseconds() > CoinDurMax){
           coinTimer.restart();
